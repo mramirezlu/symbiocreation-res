@@ -78,23 +78,36 @@ public class SymbiocreationController {
                 .flatMap(this::removeIdeas);
     }
 
+    // Completa los datos de usuario de cada participante. Usa UNA sola consulta por lote (findAllById con $in)
+    // en vez de una por participante (evita el N+1). El resultado es idéntico al enfoque anterior.
     private Mono<Symbiocreation> completeUsers(Symbiocreation s) {
-        Mono<Map<String, User>> monoOfMap = Flux.just(s.getParticipants())
-                                    .flatMapIterable(participants -> participants)
-                                    .flatMap(p -> this.userService.findById(p.getU_id()))
-                                    .collectMap(
-                                            item -> item.getId(), // key
-                                            item -> item // value
-                                    );
+        if (s.getParticipants() == null || s.getParticipants().isEmpty()) {
+            return Mono.just(s);
+        }
 
-        return Mono.create(callback -> {
-            monoOfMap.subscribe(map -> {
-                for (Participant p : s.getParticipants()) {
-                    p.setUser(map.get(p.getU_id()));
-                }
-                callback.success(s);
-            });
-        });
+        List<String> ids = s.getParticipants().stream()
+                .map(Participant::getU_id)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (ids.isEmpty()) {
+            return Mono.just(s); // participantes sin u_id: user queda null, igual que antes
+        }
+
+        return this.userService.findAllById(ids)
+                .collectMap(User::getId, u -> u)
+                .map(usersById -> assignUsers(s, usersById));
+    }
+
+    // Asigna a cada participante su usuario del mapa (o null si no está). Extraído para poder testearlo.
+    static Symbiocreation assignUsers(Symbiocreation s, Map<String, User> usersById) {
+        if (s.getParticipants() != null) {
+            for (Participant p : s.getParticipants()) {
+                p.setUser(usersById.get(p.getU_id()));
+            }
+        }
+        return s;
     }
 
     // completes users in comments of idea
@@ -174,9 +187,23 @@ public class SymbiocreationController {
     // can we get all the users from all symbios in a map, so as to not make repeated user lookups
     @GetMapping("/getMine/{userId}/{page}")
     public Flux<Symbiocreation> findByUserId(@PathVariable String userId, @PathVariable int page) {
-        Pageable paging = PageRequest.of(page, 12);
+        // Orden por fecha de creación descendente (del último al primero); el Pageable lo aplica en Mongo junto con skip/limit.
+        Pageable paging = PageRequest.of(page, 12, Sort.by("creationDateTime").descending());
         return symbioService.findAllByUser(userId, paging)
                 .flatMap(this::completeUsers); // users needed for displaying participants' names in grid or list view
+    }
+
+    // Perfil público: solo las simbios públicas del usuario (mismo orden y paginación que getMine).
+    @GetMapping("/getPublicOfUser/{userId}/{page}")
+    public Flux<Symbiocreation> findPublicOfUser(@PathVariable String userId, @PathVariable int page) {
+        Pageable paging = PageRequest.of(page, 12, Sort.by("creationDateTime").descending());
+        return symbioService.findPublicByUser(userId, paging)
+                .flatMap(this::completeUsers);
+    }
+
+    @GetMapping("/countPublicOfUser/{userId}")
+    public Mono<Long> countPublicOfUser(@PathVariable String userId) {
+        return symbioService.countPublicByUser(userId);
     }
 
     // Explore: público filtrado por nombre (opcional) y rango de fecha de creación (from/to en epoch millis, opcionales),
@@ -199,8 +226,13 @@ public class SymbiocreationController {
     @GetMapping("/getPublicRanked")
     public Flux<Symbiocreation> findPublicRanked(@RequestParam(required = false) String name,
                                                  @RequestParam(required = false, defaultValue = "new") String sort,
-                                                 @RequestParam(required = false, defaultValue = "20") int limit) {
-        return symbioService.getPublicRanked(name, sort, limit)
+                                                 @RequestParam(required = false, defaultValue = "20") int limit,
+                                                 @RequestParam(required = false, defaultValue = "0") int page,
+                                                 @RequestParam(required = false) Long from,
+                                                 @RequestParam(required = false) Long to) {
+        return symbioService.getPublicRanked(name, sort, limit, page,
+                        from != null ? new Date(from) : null,
+                        to != null ? new Date(to) : null)
                 .flatMapSequential(this::completeUsers);
     }
 

@@ -24,13 +24,19 @@ public interface ISymbiocreationService {
 
     Flux<Symbiocreation> findAllByUser(String userId, Pageable pageable);
 
+    // Perfil público: solo simbios públicas del usuario + su conteo.
+    Flux<Symbiocreation> findPublicByUser(String userId, Pageable pageable);
+
+    Mono<Long> countPublicByUser(String userId);
+
     Flux<Symbiocreation> findPublicFiltered(String visibility, String name, Date from, Date to, Pageable pageable);
 
     Mono<Long> countPublicFiltered(String visibility, String name, Date from, Date to);
 
     // Ranking de simbios públicas para el frontpage. sort: "ideas" (cant. de ideas), "collaborators"
     // (cant. de participantes) o "new" (fecha de creación); siempre DESC. name filtra por nombre (opcional).
-    Flux<Symbiocreation> getPublicRanked(String name, String sort, int limit);
+    // from/to filtran por rango de fecha de creación (opcionales). page/limit paginan el ranking (page base 0).
+    Flux<Symbiocreation> getPublicRanked(String name, String sort, int limit, int page, Date from, Date to);
 
     Flux<Symbiocreation> findByVisibilityAndDateTimeLessThanEqual(String visibility, Date now, Pageable pageable);
 

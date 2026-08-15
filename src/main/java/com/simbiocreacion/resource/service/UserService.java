@@ -34,6 +34,11 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public Flux<User> findAllById(Iterable<String> ids) {
+        return userRepository.findAllById(ids);
+    }
+
+    @Override
     public Flux<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }

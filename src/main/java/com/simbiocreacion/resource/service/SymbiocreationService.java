@@ -62,6 +62,16 @@ public class SymbiocreationService implements ISymbiocreationService {
     }
 
     @Override
+    public Flux<Symbiocreation> findPublicByUser(String userId, Pageable pageable) {
+        return symbioRepository.findPublicByUser(userId, pageable);
+    }
+
+    @Override
+    public Mono<Long> countPublicByUser(String userId) {
+        return symbioRepository.countPublicByUser(userId);
+    }
+
+    @Override
     public Flux<Symbiocreation> findPublicFiltered(String visibility, String name, Date from, Date to, Pageable pageable) {
         return symbioRepository.findPublicFiltered(visibility, name, from, to, pageable);
     }
@@ -72,12 +82,17 @@ public class SymbiocreationService implements ISymbiocreationService {
     }
 
     @Override
-    public Flux<Symbiocreation> getPublicRanked(String name, String sort, int limit) {
+    public Flux<Symbiocreation> getPublicRanked(String name, String sort, int limit, int page, Date from, Date to) {
         final String nameFilter = name == null ? "" : name.trim().toLowerCase();
 
         return symbioRepository.findAllByVisibilityFull("public")
                 .filter(s -> nameFilter.isEmpty()
                         || (s.getName() != null && s.getName().toLowerCase().contains(nameFilter)))
+                // Filtro por rango de fecha de creación (opcional). Si se pide rango y la simbio no tiene fecha, se excluye.
+                .filter(s -> from == null
+                        || (s.getCreationDateTime() != null && !s.getCreationDateTime().before(from)))
+                .filter(s -> to == null
+                        || (s.getCreationDateTime() != null && !s.getCreationDateTime().after(to)))
                 .collectList()
                 .flatMapMany(list -> {
                     Comparator<Symbiocreation> cmp;
@@ -97,6 +112,7 @@ public class SymbiocreationService implements ISymbiocreationService {
 
                     List<Symbiocreation> ranked = list.stream()
                             .sorted(cmp.reversed()) // siempre DESC
+                            .skip((long) page * limit)
                             .limit(limit)
                             .collect(Collectors.toList());
 

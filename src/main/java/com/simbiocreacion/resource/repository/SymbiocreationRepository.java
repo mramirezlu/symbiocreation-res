@@ -11,8 +11,16 @@ import java.util.Date;
 
 public interface SymbiocreationRepository extends ReactiveMongoRepository<Symbiocreation, String>, SymbiocreationRepositoryCustom {
 
-    @Query(value = "{'participants.u_id': ?0}", fields = "{'graph': 0}", sort = "{lastModified: -1}") // ineffective to order in backend????
+    // El orden lo aporta el Pageable (Sort.by("creationDateTime").descending()) desde el controller.
+    @Query(value = "{'participants.u_id': ?0}", fields = "{'graph': 0}")
     Flux<Symbiocreation> findAllByUser(String userId, Pageable pageable);
+
+    // Perfil público: solo las simbios públicas en las que participa el usuario (orden por el Pageable).
+    @Query(value = "{'participants.u_id': ?0, 'visibility': 'public'}", fields = "{'graph': 0}")
+    Flux<Symbiocreation> findPublicByUser(String userId, Pageable pageable);
+
+    @Query(value = "{'participants.u_id': ?0, 'visibility': 'public'}", count = true)
+    Mono<Long> countPublicByUser(String userId);
 
     @Query(value = "{'participants.u_id': ?0}")
     Flux<Symbiocreation> findAllByUserWithGraphs(String userId);

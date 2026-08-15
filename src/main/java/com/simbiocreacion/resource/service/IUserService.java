@@ -11,6 +11,8 @@ public interface IUserService {
 
     Mono<User> findById(String id);
 
+    Flux<User> findAllById(Iterable<String> ids);
+
     Flux<User> findByEmail(String email);
 
     Flux<User> findAll();

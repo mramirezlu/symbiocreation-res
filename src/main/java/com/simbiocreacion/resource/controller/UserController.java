@@ -1,5 +1,6 @@
 package com.simbiocreacion.resource.controller;
 
+import com.simbiocreacion.resource.dto.UserPublicDto;
 import com.simbiocreacion.resource.model.Role;
 import com.simbiocreacion.resource.model.User;
 import com.simbiocreacion.resource.service.UserService;
@@ -30,6 +31,16 @@ public class UserController {
           return userService.findById(id)
                   .map(user -> ResponseEntity.ok(user))
                   .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    // Vista pública del usuario (perfil público): solo nombres + foto + puntaje, sin email/role.
+    @GetMapping("/users/{id}/public")
+    public Mono<ResponseEntity<UserPublicDto>> findByIdPublic(@PathVariable String id) {
+        return userService.findById(id)
+                .map(u -> ResponseEntity.ok(
+                        new UserPublicDto(u.getId(), u.getName(), u.getFirstName(), u.getLastName(),
+                                u.getPictureUrl(), u.getScore())))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/users/getByEmail/{email}")
