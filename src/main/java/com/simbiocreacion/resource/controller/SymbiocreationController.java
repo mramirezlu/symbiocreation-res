@@ -310,6 +310,7 @@ public class SymbiocreationController {
                     s.setTags(newSymbio.getTags());
                     s.setExtraUrls(newSymbio.getExtraUrls());
                     s.setSdgs(newSymbio.getSdgs());
+                    s.setImgPublicId(newSymbio.getImgPublicId());
 
                     //s.setEnabled();
                     s.setVisibility(newSymbio.getVisibility());

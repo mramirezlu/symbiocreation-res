@@ -98,7 +98,7 @@ public class LlmService implements ILlmService {
             """;
 
     private static final String USER_QUERY_TEMPLATE_2 = """
-            Give me a new idea that summarizes all the ideas given to you.
+            Give me one or more new ideas that consolidate the ideas given to you.
             {format}
             """;
 

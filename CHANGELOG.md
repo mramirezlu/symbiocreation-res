@@ -1,5 +1,10 @@
 > Cambios del **backend** (`symbiocreation-res`). Los cambios del **frontend** están en `symbiocreation-ui-fork/CHANGELOG.md`.
 
+# 17/08/26 mramirez
+- **LlmService**: Corregido el fallo de "Generar ideas con IA" para **grupos** (devolvía "La IA no generó sugerencias"). `USER_QUERY_TEMPLATE_2` pedía "a new idea" (singular) mientras el `BeanOutputConverter` espera `List<IdeaAiResponse>`; el modelo devolvía un objeto `{}` en vez de un array `[]` y el parseo fallaba → `onErrorResume` → lista vacía. Ahora pide "one or more new ideas that consolidate…" (plural → array).
+- **OneDotRepository**: `findAllByUser` (listado "Mis SymbioGames") ahora **incluye el `grid`** y excluye `screenshots` (antes al revés). La proyección pasó de `{'grid': 0}` a `{'screenshots': 0}` para que el listado pueda pintar la miniatura del tablero y el tamaño sin cargar el historial pesado de screenshots.
+- **Symbiocreation / SymbiocreationController**: Nuevo campo `imgPublicId` (portada, public_id de Cloudinary). Se persiste al crear (guarda el objeto completo) y se copia en `updateInfo` (`s.setImgPublicId(...)`). Los listados usan proyección `{'graph': 0}`, así que el campo viaja a las tarjetas sin cambios adicionales.
+
 # 14/12/25 mramirez
 - **LlmService**: Corregido `IndexOutOfBoundsException` cuando una symbiocreation tiene menos de 3 ideas
 - **LlmService**: Corregido `NullPointerException` en templates cuando `title` o `description` son null

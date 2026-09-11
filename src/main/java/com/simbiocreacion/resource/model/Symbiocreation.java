@@ -30,6 +30,8 @@ public class Symbiocreation {
     private List<String> extraUrls;
     private List<String> sdgs;
 
+    private String imgPublicId; // portada (public_id de Cloudinary, subida desde el navegador)
+
     private Date creationDateTime;
     private Date lastModified;
     private boolean enabled;

@@ -9,7 +9,8 @@ import reactor.core.publisher.Mono;
 
 public interface OneDotRepository extends ReactiveMongoRepository<OneDot, String> {
 
-    @Query(value = "{'participants.u_id': ?0}", fields = "{'grid': 0}", sort = "{lastModifiedAt: -1}") // ineffective to order in backend????
+    // Excluye 'screenshots' (historial pesado) pero conserva 'grid' para pintar la miniatura y el tamaño en el listado
+    @Query(value = "{'participants.u_id': ?0}", fields = "{'screenshots': 0}", sort = "{lastModifiedAt: -1}") // ineffective to order in backend????
     Flux<OneDot> findAllByUser(String userId, Pageable pageable);
 
     @Query(value = "{'participants.u_id': ?0}", count = true)
